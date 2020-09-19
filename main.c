@@ -112,8 +112,8 @@ int main(int argc, char * const * argv)
     }
      }
         while(1){
-            close((pipeArray+n)->tuberia[1]);
-            read((pipeArray+n)->tuberia[0], &f, sizeof(char));
+            close((pipeArray+n-1)->tuberia[1]);
+            read((pipeArray+n-1)->tuberia[0], &f, sizeof(char));
             printf("—-> Soy el proceso PADRE con PID %d  y recibí el testigo %c, el cual tendré por 5 segundos \n", getpid(), f);
             
             sleep(5); 
