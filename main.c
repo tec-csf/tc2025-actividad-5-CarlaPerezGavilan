@@ -35,6 +35,8 @@ int main(int argc, const char * argv[])
         count++;
     }
     char f = 'T';
+    write(pipeArray->tuberia[1], &f, sizeof(char));
+    printf("—-> Soy el proceso padre inicializando el testigo %c \n", f);
 
     for(int i = 1; i<=n; i++){
         pid = fork();
@@ -46,37 +48,48 @@ int main(int argc, const char * argv[])
     }
     else if (pid == 0)
     {
-        printf("** Creación de hijo %d de pid %d \n", i, pid);
-        char t;
+        printf("XXX Creación de hijo %d de pid %d \n", i, pid);
+        char f;
         while(1){
             close((pipeArray+i-1)->tuberia[1]);
-            read((pipeArray+i-1)->tuberia[0], &t, sizeof(char));
-            printf("—-> Soy el proceso número %d con PID %d  y recibí el testigo %c, el cual tendré por 5 segundos \n", i, getpid(), t);
+            read((pipeArray+i-1)->tuberia[0], &f, sizeof(char));
+            printf("PROCESS %d READING FROM %d \n", i, i-1);
+            printf("—-> Soy el proceso número %d con PID %d  y recibí el testigo %c, el cual tendré por 5 segundos \n", i, getpid(), f);
+            
             sleep(5); 
-            printf("<—- Soy el proceso número %d con PID %d y acabo de enviar el testigo %c \n", i, getpid(), t);
-            if(i==n-1){
+
+            printf("<—- Soy el proceso número %d con PID %d y acabo de enviar el testigo %c \n", i, getpid(), f);
+            if(i==n){
             close((pipeArray)->tuberia[0]);
-            write((pipeArray)->tuberia[1], &t, sizeof(char));
+            write((pipeArray)->tuberia[1], &f, sizeof(char));
             }else{
             close((pipeArray+i)->tuberia[0]);
-            write((pipeArray+i)->tuberia[1], &t, sizeof(char));
+            printf("PROCESS %d WRITING TO %d \n", i, i);
+            write((pipeArray+i)->tuberia[1], &f, sizeof(char));
             }
         }
         exit(0);
+    }else{
+                    printf("iteración %d \n", i);
     }
-    else {
-        
+     }
         while(1){
             close((pipeArray+n)->tuberia[1]);
             read((pipeArray+n)->tuberia[0], &f, sizeof(char));
             printf("—-> Soy el proceso PADRE con PID %d  y recibí el testigo %c, el cual tendré por 5 segundos \n", getpid(), f);
+            
             sleep(5); 
+            
             printf("<—- Soy el proceso PADRE con PID %d y acabo de enviar el testigo %c \n", getpid(), f);
-            close((pipeArray+1)->tuberia[0]);
-            write((pipeArray+1)->tuberia[1], &f, sizeof(char));
+            close((pipeArray)->tuberia[0]);
+            write((pipeArray)->tuberia[1], &f, sizeof(char));
         }
-    }
-    }
+
+        for(aux = pipeArray; aux<last; aux++){
+            free(aux);
+        }
+        free(pipeArray);
+   
     
     return 0;
 }
