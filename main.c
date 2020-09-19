@@ -6,17 +6,48 @@
 //  Copyright (c) 2020 Carla Pérez Gavilán Del Castillo . All rights reserved.
 //
 
+#include <ctype.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
 
+
+
+    
 
 typedef struct{
     int tuberia[2];
 }tube;
 
-int main(int argc, const char * argv[])
+int main(int argc, char * const * argv)
 {
+    char *nvalue = NULL;
+    int n = 0;
+    int option;
+    opterr = 0;
+    
+    while ((option = getopt (argc, argv, "n:")) != -1)
+        switch (option)
+    {
+        case 'n':
+            nvalue = optarg;
+            n = atoi(nvalue);
+            break;
+        case '?':
+            if (optopt == 'n')
+                fprintf (stderr, "Opción -%c requiere un argumento.\n", optopt);
+            else if (isprint (optopt))
+                fprintf (stderr, "Opción desconocida '-%c'.\n", optopt);
+            else
+                fprintf (stderr,
+                         "Opción desconocida '\\x%x'.\n",
+                         optopt);
+            return 1;
+        default:
+            printf("ERROR: no ingresó la cantidad de procesos que desea o se generarrán 0 procesos\n");
+            exit(0);
+    
+    }
     //Vector de pipes 
     tube * pipeArray;
     tube * last;
@@ -24,20 +55,28 @@ int main(int argc, const char * argv[])
 
     //Vector de procesos
     pid_t pid;
-    int n = 5;
 
     pipeArray = (tube *) malloc(sizeof(tube)*n);
     last = pipeArray + (n);
     int count = 0;
+
+    if(n == 0){
+        printf("ERROR: no ingresó la cantidad de procesos que desea o se generarrán 0 procesos\n");
+        exit(0);
+    }
+    
     for(aux = pipeArray; aux<last; aux++){
         pipe(aux->tuberia);
-        printf("initialized %d pipe  \n", count);
+        printf("Inicio de pipe  %d \n", count);
         count++;
     }
+
+    
     char f = 'T';
     write(pipeArray->tuberia[1], &f, sizeof(char));
     printf("—-> Soy el proceso padre inicializando el testigo %c \n", f);
 
+    
     for(int i = 1; i<=n; i++){
         pid = fork();
 
@@ -48,23 +87,22 @@ int main(int argc, const char * argv[])
     }
     else if (pid == 0)
     {
-        printf("XXX Creación de hijo %d de pid %d \n", i, pid);
+        printf("(%d)--> --> Creación de hijo %d de pid %d \n",i, i, pid);
         char f;
         while(1){
             close((pipeArray+i-1)->tuberia[1]);
             read((pipeArray+i-1)->tuberia[0], &f, sizeof(char));
             printf("PROCESS %d READING FROM %d \n", i, i-1);
-            printf("—-> Soy el proceso número %d con PID %d  y recibí el testigo %c, el cual tendré por 5 segundos \n", i, getpid(), f);
+            printf("(%d) —-> Soy el proceso número %d con PID %d  y recibí el testigo %c, el cual tendré por 5 segundos \n", i,  i, getpid(), f);
             
             sleep(5); 
 
-            printf("<—- Soy el proceso número %d con PID %d y acabo de enviar el testigo %c \n", i, getpid(), f);
+            printf("(%d) <—- Soy el proceso número %d con PID %d y acabo de enviar el testigo %c \n",i,  i, getpid(), f);
             if(i==n){
             close((pipeArray)->tuberia[0]);
             write((pipeArray)->tuberia[1], &f, sizeof(char));
             }else{
             close((pipeArray+i)->tuberia[0]);
-            printf("PROCESS %d WRITING TO %d \n", i, i);
             write((pipeArray+i)->tuberia[1], &f, sizeof(char));
             }
         }
